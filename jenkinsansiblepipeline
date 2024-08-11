@@ -1,0 +1,41 @@
+pipeline{
+ agent {
+ label 'ansiblenode'
+ }
+
+environment{
+AWS_EC2PEMFILE=credentials('ec2_pem_file')  
+}
+
+ stages{
+  //checkout code from git
+  stage('CheckOutCode'){
+  steps{
+  git credentialsId: '17ae8c66-f9f2-49c5-9ad8-0081d07b40bb', url: 
+ 'https://github.com/zeeshanabu/jekins-ansible-dynimc-inv.git'  
+ }
+ }
+
+ //Execute terraform script
+ stage('ExecuteTerraformScript'){
+    steps{
+    sh "terraform -v"
+    sh "terraform -chdir=terraformscripts init"
+    sh "terraform -chdir=terraformscripts apply --auto-approve"
+ }
+ }
+ //Run ansible playbooks
+ stage('RunAnsiblePlaybook'){
+    steps {
+        withCredentials([file(credentialsId: 'ec2_pem_file', variable: 'AWS_EC2PEMFILE_PATH')]) {
+    sh ''' ansible-inventory --graph -i inventory/aws_ec2.yaml '''
+    sh '''
+    ansible-playbook -i inventory/aws_ec2.yaml --private-key="${AWS_EC2PEMFILE_PATH}" playbooks/pingServers.yaml --ssh-common-args="-o StrictHostKeyChecking=no" 
+    '''
+}
+}
+}
+
+ 
+}//stageclossing
+}//pipeline closing

@@ -1,0 +1,9 @@
+---
+- hosts: all 
+  gather_facts: no
+  tasks:
+   - name: createing file
+     file:
+      path: /tmp/filemodule.sh
+      state: touch
+...
